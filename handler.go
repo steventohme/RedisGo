@@ -14,6 +14,7 @@ var Handlers = map[string]func([]Value) Value{
 	"HGETALL": hgetall,
 	"MGET": mget,
 	"INCR": incr,
+	"DECR": decr,
 }
 
 var SETs = map[string]string{}
@@ -171,6 +172,37 @@ func incr (args []Value) Value {
 	}
 
 	i++
+	value = strconv.Itoa(i)
+	SETs[key] = value
+
+	SETsMu.Unlock()
+	
+
+	return Value{typ: "bulk", bulk: value}
+}
+
+func decr (args []Value) Value {
+	if len(args) != 1 {
+		return Value{typ: "error", str: "Invalid number of arguments"}
+	}
+
+	key := args[0].bulk
+
+	SETsMu.Lock()
+	value, ok := SETs[key]
+	if !ok {
+		SETs[key] = "1"
+		SETsMu.Unlock()
+		return Value{typ: "bulk", bulk: "1"}
+	}
+
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		SETsMu.Unlock()
+		return Value{typ: "error", str: "Value cannot be converted to integer"}
+	}
+
+	i--
 	value = strconv.Itoa(i)
 	SETs[key] = value
 

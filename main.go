@@ -9,7 +9,6 @@ import (
 func main() {
 	fmt.Println("Listening on port :6379")
 
-	// Create a new server
 	l, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		fmt.Println(err)
@@ -74,7 +73,7 @@ func main() {
 			continue
 		}
 
-		if command == "SET" || command == "HSET" || command == "INCR"{
+		if command == "SET" || command == "HSET" || command == "INCR" || command == "DECR" { 
 			aof.Write(value)
 		}
 
