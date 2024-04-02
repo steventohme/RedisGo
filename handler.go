@@ -2,6 +2,7 @@ package main
 
 import (
 	"sync"
+	"strconv"
 )
 
 var Handlers = map[string]func([]Value) Value{
@@ -12,6 +13,7 @@ var Handlers = map[string]func([]Value) Value{
 	"HGET": hget,
 	"HGETALL": hgetall,
 	"MGET": mget,
+	"INCR": incr,
 }
 
 var SETs = map[string]string{}
@@ -145,4 +147,35 @@ func mget (args []Value) Value {
 	}
 
 	return Value{typ: "array", array: array}
+}
+
+func incr (args []Value) Value {
+	if len(args) != 1 {
+		return Value{typ: "error", str: "Invalid number of arguments"}
+	}
+
+	key := args[0].bulk
+
+	SETsMu.Lock()
+	value, ok := SETs[key]
+	if !ok {
+		SETs[key] = "1"
+		SETsMu.Unlock()
+		return Value{typ: "bulk", bulk: "1"}
+	}
+
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		SETsMu.Unlock()
+		return Value{typ: "error", str: "Value cannot be converted to integer"}
+	}
+
+	i++
+	value = strconv.Itoa(i)
+	SETs[key] = value
+
+	SETsMu.Unlock()
+	
+
+	return Value{typ: "bulk", bulk: value}
 }

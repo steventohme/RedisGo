@@ -74,7 +74,7 @@ func main() {
 			continue
 		}
 
-		if command == "SET" || command == "HSET" {
+		if command == "SET" || command == "HSET" || command == "INCR"{
 			aof.Write(value)
 		}
 
