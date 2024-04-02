@@ -11,6 +11,7 @@ var Handlers = map[string]func([]Value) Value{
 	"HSET": hset,
 	"HGET": hget,
 	"HGETALL": hgetall,
+	"MGET": mget,
 }
 
 var SETs = map[string]string{}
@@ -114,6 +115,32 @@ func hgetall(args []Value) Value {
 	array := make([]Value, 0, len(values) * 2)
 	for key, value := range values {
 		array = append(array, Value{typ: "bulk", bulk: key})
+		array = append(array, Value{typ: "bulk", bulk: value})
+	}
+
+	return Value{typ: "array", array: array}
+}
+
+func mget (args []Value) Value {
+	if len(args) < 1 {
+		return Value{typ: "error", str: "Invalid number of arguments"}
+	}
+
+	array := make([]Value, 0, len(args))
+	for _, arg := range args {
+		if arg.typ != "bulk" {
+			return Value{typ: "error", str: "Invalid argument type"}
+		}
+
+		SETsMu.RLock()
+		value, ok := SETs[arg.bulk]
+		SETsMu.RUnlock()
+
+		if !ok {
+			array = append(array, Value{typ: "null"})
+			continue
+		}
+
 		array = append(array, Value{typ: "bulk", bulk: value})
 	}
 
